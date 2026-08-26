@@ -1,0 +1,947 @@
+/* Fonts are self-hosted: see static/vendor/fonts/fonts.css (loaded from
+   _partials/head_assets.html). No external font origins remain. */
+
+/* -------------------------------------------------------------------------- */
+/* Design tokens — single source of truth                                     */
+/* -------------------------------------------------------------------------- */
+:root {
+    /* PreCheck is dark-first; declare it so native UI (form controls, scrollbars)
+       renders dark and browsers/extensions know the page already handles dark mode
+       (paired with the darkreader-lock meta to stop double-darkening). */
+    color-scheme: dark;
+    /* Typography */
+    --rc-font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --rc-font-display: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --rc-font-mono: 'Spline Sans Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --rc-font-wordmark: 'IBM Plex Sans', sans-serif;
+    /* Surfaces — PreCheck "Ink + Oxblood, quiet accent" palette
+       (spec: docs/precheck-palette.md), dark. Near-monochrome warm neutrals;
+       the oxblood accent appears ONLY on text/underlines (active nav, role
+       titles, links, focus rings) — never as fills, card borders, or areas. */
+    --rc-bg: #171616;
+    --rc-surface: #201F1F;
+    --rc-surface-2: #2B2929;
+    --rc-surface-3: #353232;
+    --rc-panel: #201F1F;
+    /* Borders */
+    --rc-border: #2E2C2C;
+    --rc-border-strong: #3B3838;
+    /* Text */
+    --rc-text: #F1EFEE;
+    --rc-muted: #9B9795;
+    --rc-faint: #7A7674;
+    /* Oxblood accent (light-on-dark tuning) — text + underlines only */
+    --rc-accent: #C46A6A;
+    --rc-accent-hover: #D28080;
+    --rc-accent-strong: #C46A6A;
+    --rc-accent-soft: rgba(196, 106, 106, 0.12);
+    --rc-accent-line: rgba(196, 106, 106, 0.35);
+    --rc-on-accent: #ffffff;
+    --rc-accent-blue: #D28080;
+    --rc-accent-blue-soft: #C46A6A;
+    /* Active-nav accent (same oxblood; kept as its own token for semantics) */
+    --rc-signature: #C46A6A;
+    --rc-signature-soft: rgba(196, 106, 106, 0.12);
+    /* Buttons stay neutral per the palette's usage rules: the primary action
+       is an inverted-neutral "ink" button (near-white on dark theme). */
+    --rc-btn: #F1EFEE;
+    --rc-btn-hover: #DBD7D5;
+    --rc-on-btn: #171616;
+    /* Semantic decision trio (verdicts) — logo accent hues map to rubric
+       semantics: teal = met, orange = partial, red = not specified. */
+    --rc-flag: #F05A5A;        /* not specified / failing */
+    --rc-flag-bg: rgba(240, 90, 90, 0.15);
+    --rc-flag-border: rgba(240, 90, 90, 0.45);
+    --rc-ok: #4FC4B4;          /* criterion met */
+    --rc-ok-bg: rgba(79, 196, 180, 0.15);
+    --rc-ok-border: rgba(79, 196, 180, 0.45);
+    --rc-warn: #F09C3C;        /* partial / needs attention */
+    --rc-warn-bg: rgba(240, 156, 60, 0.15);
+    --rc-warn-border: rgba(240, 156, 60, 0.45);
+    --rc-neutral: #4A4746;     /* not applicable */
+    /* Elevation — neutral blacks (the old values carried a navy cast) */
+    --rc-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --rc-shadow-md: 0 14px 34px rgba(0, 0, 0, 0.40);
+    --rc-shadow-lg: 0 28px 64px rgba(0, 0, 0, 0.52);
+    /* Radii */
+    --rc-radius-sm: 8px;
+    --rc-radius: 12px;
+    --rc-radius-lg: 18px;
+    --upload-strip-width: clamp(16rem, 50vw, 78rem);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Light theme — Ink + Oxblood, light surfaces per the palette spec. Opt-in   */
+/* via the navbar toggle; dark stays the default (see color-modes.js). Only   */
+/* color tokens change here.                                                  */
+/* -------------------------------------------------------------------------- */
+[data-bs-theme="light"] {
+    color-scheme: light;
+    --rc-bg: #F7F6F5;
+    --rc-surface: #FFFFFF;
+    --rc-surface-2: #ECE9E7;
+    --rc-surface-3: #E0DCDA;
+    --rc-panel: #FFFFFF;
+    --rc-border: #E6E2E0;
+    --rc-border-strong: #D6D1CF;
+    --rc-text: #262322;
+    --rc-muted: #757070;
+    --rc-faint: #8D8885;
+    /* Oxblood accent (dark-on-light tuning) */
+    --rc-accent: #8E3B3B;
+    --rc-accent-hover: #7A3232;
+    --rc-accent-strong: #8E3B3B;
+    --rc-accent-soft: rgba(142, 59, 59, 0.10);
+    --rc-accent-line: rgba(142, 59, 59, 0.30);
+    --rc-accent-blue: #7A3232;
+    --rc-accent-blue-soft: #8E3B3B;
+    --rc-signature: #8E3B3B;
+    --rc-signature-soft: rgba(142, 59, 59, 0.10);
+    /* Inverted-neutral ink button on light ground */
+    --rc-btn: #262322;
+    --rc-btn-hover: #3A3634;
+    --rc-on-btn: #F7F6F5;
+    /* Verdict trio — darkened so chips read on white; tints re-based on the
+       darkened hues (the dark-theme tints assume a dark backdrop) */
+    --rc-flag: #CC3B3B;
+    --rc-flag-bg: rgba(204, 59, 59, 0.10);
+    --rc-flag-border: rgba(204, 59, 59, 0.40);
+    --rc-ok: #1F8F80;
+    --rc-ok-bg: rgba(31, 143, 128, 0.10);
+    --rc-ok-border: rgba(31, 143, 128, 0.40);
+    --rc-warn: #B26A00;
+    --rc-warn-bg: rgba(178, 106, 0, 0.10);
+    --rc-warn-border: rgba(178, 106, 0, 0.40);
+    --rc-neutral: #757070;
+    /* Softer, warm-neutral elevation on light surfaces (spec: --card-shadow) */
+    --rc-shadow-sm: 0 1px 3px rgba(40, 30, 30, 0.06);
+    --rc-shadow-md: 0 6px 18px rgba(40, 30, 30, 0.08);
+    --rc-shadow-lg: 0 16px 40px rgba(40, 30, 30, 0.10);
+}
+
+/* Light-mode overrides for components that hardcode dark-only values. */
+[data-bs-theme="light"] body {
+    text-shadow: none;
+    box-shadow: none;
+}
+[data-bs-theme="light"] select.form-control,
+[data-bs-theme="light"] select.form-select,
+[data-bs-theme="light"] select.app-toggles,
+[data-bs-theme="light"] select.llm-select,
+[data-bs-theme="light"] select.survey-select {
+    /* dark chevron for light backgrounds */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23262322' d='M1.41 0 6 4.58 10.59 0 12 1.41 6 7.41 0 1.41z'/%3E%3C/svg%3E");
+}
+[data-bs-theme="light"] .docs-panel--doc .docs-panel__scroll {
+    background: #ECE9E7;
+}
+[data-bs-theme="light"] .tp2-left {
+    background: var(--rc-surface-2);
+}
+/* Only a negative (white) SNSF logo asset exists; render it dark on light. */
+[data-bs-theme="light"] .footer-funding__logo {
+    filter: brightness(0);
+    opacity: 0.6;
+}
+
+body {
+    font-family: var(--rc-font-sans);
+    background-color: var(--rc-bg);
+    color: var(--rc-text);
+    min-height: 100vh;
+}
+
+h1 {
+    font-family: var(--rc-font-display);
+    letter-spacing: -0.01em;
+    color: var(--rc-text);
+}
+
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--rc-font-sans);
+    letter-spacing: -0.01em;
+    color: var(--rc-text);
+}
+
+p,
+li,
+label {
+    color: var(--rc-text);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--rc-accent-blue-soft);
+}
+
+a:hover,
+a:focus {
+    color: var(--rc-accent-blue);
+}
+
+/* Navbar brand — PreCheck mark (theme-swapped) + IBM Plex wordmark */
+.navbar-brand__mark {
+    width: 30px;
+    height: 30px;
+    display: none;
+    margin-right: 0.55rem;
+}
+
+[data-bs-theme="dark"] .navbar-brand__mark--dark {
+    display: block;
+}
+
+[data-bs-theme="light"] .navbar-brand__mark--light {
+    display: block;
+}
+
+.navbar .navbar-brand .navbar-brand__bold {
+    font-weight: 700;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin-left: 0.6rem;
+    background: transparent;
+    border: 1px solid var(--rc-border);
+    border-radius: 8px;
+    color: var(--rc-text);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--rc-surface-2);
+    border-color: var(--rc-border-strong);
+}
+
+.theme-toggle__icon {
+    display: none;
+}
+
+[data-bs-theme="dark"] .theme-toggle__icon--sun {
+    display: block;
+}
+
+[data-bs-theme="light"] .theme-toggle__icon--moon {
+    display: block;
+}
+
+.locked-image {
+    max-width: 10px;
+}
+
+.locked-option {
+    color: grey;
+}
+
+.locked-option:hover {
+    color: grey;
+    background-color: inherit;
+}
+
+.nav-link {
+    margin: 0 6px; /* Adjust the value as needed */
+}
+
+/* Optional: Add some padding inside the dropdown items for better spacing */
+.nav-item.dropdown .dropdown-item {
+    padding: 10px 20px; /* Adjust the value as needed */
+}
+
+.dropdown-menu-dark {
+    background-color: #0c0f1a;
+    color: #f5f7ff;
+}
+
+.dropdown-menu-dark .dropdown-item {
+    color: #f5f7ff;
+}
+
+.dropdown-menu-dark .dropdown-item:hover,
+.dropdown-menu-dark .dropdown-item:focus {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.px-3 {
+    margin-top: 10vh;
+}
+
+.team-content {
+    max-width: min(1060px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.team-grid {
+    row-gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.team-card {
+    position: relative;
+    background: var(--rc-surface);
+    border: 1px solid var(--rc-border);
+    border-radius: var(--rc-radius-lg);
+    padding: clamp(1.5rem, 3vw, 2rem) clamp(1.1rem, 2.5vw, 1.5rem) clamp(1.3rem, 2.5vw, 1.6rem);
+    box-shadow: var(--rc-shadow-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+/* Palette rule: cards carry plain 1px borders — no colored top stripes. */
+
+.team-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--rc-border-strong);
+}
+
+.team-avatar {
+    width: clamp(118px, 24vw, 158px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--rc-surface-3);
+    box-shadow: var(--rc-shadow-sm);
+    margin-bottom: 0.35rem;
+}
+
+.team-card h5 {
+    margin: 0;
+    font-size: 1.16rem;
+    font-family: var(--rc-font-display);
+    letter-spacing: -0.01em;
+}
+
+.team-card p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--rc-muted);
+    line-height: 1.55;
+}
+
+.team-card .team-role {
+    color: var(--rc-accent-strong);
+    font-weight: 600;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the form elements horizontally */
+    margin: 10px 0;
+    width: 100%; /* Ensure the form group takes up full width */
+    text-align: center; /* Center align text */
+    text-shadow: none;
+}
+
+.form-control-file {
+    margin-top: 5px; 
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+
+
+body:not(.results-page) .table-responsive th,
+body:not(.results-page) .table-responsive td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+body:not(.results-page) .table-responsive thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #dee2e6;
+}
+
+body:not(.results-page) .table-responsive tbody + tbody {
+    border-top: 2px solid #dee2e6;
+}
+
+/* 
+ * Below is for team page styling 
+ */
+
+.team-member-img {
+    width: 150px; /* Set a fixed width */
+    height: 150px; /* Set a fixed height */
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+    display: block; /* Ensure the image is treated as a block element */
+    margin: 0 auto; /* Center the image horizontally */
+    padding-bottom: 7px;
+}
+
+
+.custom-footer-padding {
+    padding-top: 20px;
+}
+
+.disclaimer-text {
+    margin: 10px auto 10px;
+    color: var(--rc-text);
+    font-size: medium;
+
+}
+
+.download-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+#download-preregistration-btn, #download-paper-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 33%;
+    text-align: center;
+}
+
+.download-buttons .btn-submit {
+    width: 100%;
+}
+
+.general-text {
+    color: var(--rc-text);
+    display: block;
+}
+
+.upload-icon {
+    max-width: 30px;
+}
+
+#doi-icon {
+    max-width: 30px;
+    padding-right: 5px;
+}
+
+.contact-info {
+    margin-top: 1px;
+    margin-bottom: 0px;
+    text-align: left;
+}
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: var(--rc-accent-blue-soft);
+    text-decoration: underline;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 100px;
+    background-color: rgba(24, 22, 22, 0.95);
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 75%; /* Position the tooltip above the text */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+.footer-link {
+    color: inherit;
+}
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+.footer-sep {
+    opacity: 0.5;
+    user-select: none;
+}
+.page-background,
+:root,
+html,
+body,
+body::before,
+body::after,
+main,
+.cover-container,
+.container,
+footer {
+    background-color: var(--rc-bg) !important;
+    background-image: none !important;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body,
+html {
+    min-height: 100vh;
+}
+
+body.text-bg-dark {
+    background-color: var(--rc-bg) !important;
+    box-shadow: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Global theme overrides (applied after legacy rules)                        */
+/* -------------------------------------------------------------------------- */
+
+.page-shell {
+    background: transparent;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-shell main {
+    flex: 1;
+}
+
+.cover-container,
+main,
+header,
+footer {
+    color: var(--rc-text);
+}
+
+.cover-container {
+    background: transparent;
+}
+
+.nav-link {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--rc-text) !important;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--rc-accent-blue-soft) !important;
+}
+
+.dropdown-menu {
+    background: rgba(18, 20, 32, 0.95);
+    border: 1px solid var(--rc-border);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+}
+
+.dropdown-item {
+    color: var(--rc-text);
+    letter-spacing: 0.04em;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-blue-soft);
+}
+
+.btn,
+.btn-submit {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.85rem 1.6rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary,
+.btn-submit,
+#app-download-btn,
+#app-compare-btn,
+#app-back-btn {
+    background: var(--rc-btn);
+    border: none;
+    color: var(--rc-on-btn);
+}
+
+.btn-secondary,
+#append-btn,
+.btn-outline-light {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f5f7ff;
+}
+
+.btn:hover,
+.btn:focus,
+.btn-submit:hover,
+.btn-submit:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(17, 21, 38, 0.45);
+    color: inherit;
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.form-control,
+.form-select {
+    background: rgba(28, 32, 48, 0.85);
+    border: 1px solid var(--rc-border);
+    color: var(--rc-text);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-family: var(--rc-font-sans);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: color-mix(in srgb, var(--rc-accent) 55%, transparent);
+    box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--rc-accent) 25%, transparent);
+    outline: none;
+}
+
+/* Add dropdown chevrons to all selects */
+select.form-control,
+select.form-select,
+select.app-toggles,
+select.llm-select,
+select.survey-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f5f7ff' d='M1.41 0 6 4.58 10.59 0 12 1.41 6 7.41 0 1.41z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 0.6rem;
+    padding-right: 2rem;
+    color: #f5f7ff;
+    background-color: #0c0f1a;
+}
+
+select.form-control option,
+select.form-select option,
+select.app-toggles option,
+select.llm-select option,
+select.survey-select option {
+    color: #f5f7ff;
+    background-color: #0c0f1a;
+}
+
+.form-text,
+.supported-files {
+    color: var(--rc-muted);
+}
+
+.custom-footer-padding {
+    color: var(--rc-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.footer-funding {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.footer-funding__logo {
+    height: 24px;
+    width: auto;
+}
+
+.footer-link {
+    color: var(--rc-accent-blue-soft);
+}
+
+.footer-link:hover,
+.footer-link:focus {
+    color: var(--rc-accent-blue);
+}
+
+.table thead th {
+    color: var(--rc-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+}
+
+.table {
+    color: var(--rc-text);
+}
+
+.page-shell section + section,
+main.px-3 > :not(:first-child) {
+    margin-top: 2rem;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Refreshed dark theme — component overrides (tokens defined at top)          */
+/* -------------------------------------------------------------------------- */
+
+body,
+body.text-bg-dark {
+    color: var(--rc-text) !important;
+    background-color: var(--rc-bg) !important;
+    text-shadow: none !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Near-opaque accent so selection stays readable over ANY background —
+   including the yellow/blue evidence <mark> highlights, where the old
+   translucent wash left near-white text on a light mark. (Same accent in
+   both themes; slight alpha because some browsers ignore fully opaque
+   selection colours.) */
+::selection {
+    background: rgba(142, 59, 59, 0.95);
+    color: #ffffff;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.navbar .navbar-brand span {
+    color: var(--rc-text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.navbar .navbar-brand span {
+    font-family: var(--rc-font-wordmark);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+}
+
+p,
+li,
+label {
+    color: var(--rc-text);
+}
+
+.cover-container,
+main,
+header,
+footer {
+    color: var(--rc-text);
+}
+
+.navbar .navbar-brand,
+.navbar .navbar-brand:hover,
+.navbar .navbar-brand:focus,
+.nav-link {
+    color: var(--rc-text) !important;
+}
+
+/* Hover = quiet neutral (grey), per the palette's usage rules; only the
+   ACTIVE nav item carries the oxblood accent. */
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--rc-text) !important;
+    border-bottom-color: var(--rc-border-strong) !important;
+}
+
+/* Active nav — PreCheck signature teal */
+.nav-masthead .active {
+    color: var(--rc-signature) !important;
+    border-bottom-color: var(--rc-signature) !important;
+}
+
+.navbar-dark .navbar-toggler {
+    border-color: var(--rc-border-strong);
+}
+
+.navbar-dark .navbar-toggler-icon {
+    filter: none;
+}
+
+.dropdown-menu,
+.dropdown-menu-dark {
+    background: var(--rc-panel);
+    border: 1px solid var(--rc-border);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+}
+
+.dropdown-item,
+.dropdown-menu-dark .dropdown-item {
+    color: var(--rc-text);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-menu-dark .dropdown-item:hover,
+.dropdown-menu-dark .dropdown-item:focus {
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-strong);
+}
+
+.dropdown-item.active,
+.dropdown-item.active:hover,
+.dropdown-item.active:focus,
+.nav-masthead .dropdown-item.active,
+.dropdown-menu .dropdown-item.active,
+.dropdown-menu-dark .dropdown-item.active {
+    background: var(--rc-btn) !important;
+    color: var(--rc-on-btn) !important;
+}
+
+.btn,
+.btn-submit {
+    border-radius: 8px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    box-shadow: none;
+}
+
+.btn-primary,
+.btn-submit,
+#app-download-btn,
+#app-compare-btn,
+#app-back-btn {
+    background: var(--rc-btn);
+    color: var(--rc-on-btn);
+    border: 1px solid var(--rc-btn);
+}
+
+.btn-secondary,
+#append-btn,
+.btn-outline-light {
+    background: var(--rc-panel);
+    border: 1px solid var(--rc-border);
+    color: var(--rc-text);
+}
+
+.btn:hover,
+.btn:focus,
+.btn-submit:hover,
+.btn-submit:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-submit:hover,
+.btn-submit:focus,
+#app-compare-btn:hover,
+#app-compare-btn:focus {
+    color: var(--rc-on-btn);
+    background: var(--rc-btn-hover);
+    border-color: var(--rc-btn-hover);
+}
+
+.form-control,
+.form-select {
+    background: var(--rc-surface);
+    border-color: var(--rc-border);
+    color: var(--rc-text);
+    border-radius: 8px;
+}
+
+.form-control::placeholder,
+.form-select::placeholder {
+    color: var(--rc-faint);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    background: var(--rc-surface-2);
+    color: var(--rc-faint);
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: color-mix(in srgb, var(--rc-accent) 60%, transparent);
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--rc-accent) 22%, transparent);
+}
+
+select.form-control,
+select.form-select,
+select.app-toggles,
+select.llm-select,
+select.survey-select {
+    color: var(--rc-text);
+    background-color: var(--rc-surface);
+    border-color: var(--rc-border);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23F1EFEE' d='M1.41 0 6 4.58 10.59 0 12 1.41 6 7.41 0 1.41z'/%3E%3C/svg%3E");
+}
+
+select.form-control option,
+select.form-select option,
+select.app-toggles option,
+select.llm-select option,
+select.survey-select option {
+    color: var(--rc-text);
+    background-color: var(--rc-surface);
+}
+
+.form-text,
+.supported-files,
+.custom-footer-padding,
+.footer-link {
+    color: var(--rc-muted);
+}
+
+.general-text,
+.text-muted {
+    color: var(--rc-muted) !important;
+}
+
+body:not(.results-page) .table-responsive th,
+body:not(.results-page) .table-responsive td {
+    border-color: var(--rc-border);
+}
+
+body:not(.results-page) .table-responsive thead th,
+body:not(.results-page) .table-responsive tbody + tbody {
+    border-color: var(--rc-border-strong);
+}
+
+.footer-link:hover,
+.footer-link:focus {
+    color: var(--rc-accent-strong);
+}
+

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    {% include '_partials/head_assets.html' %}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="The team behind {{ brand_name }}."/>
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="author" content="Jamie Cummins">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ brand_name }} Team</title>
+    <style>
+      .team-main {
+        flex: 1;
+        width: 100%; /* team-content's auto margins otherwise shrink-wrap this flex item */
+        padding: clamp(1rem, 3vw, 2.5rem) 1rem 2rem;
+      }
+      .team-title { margin: 0 0 0.4rem; }
+      .team-lede { color: var(--rc-muted); margin: 0 0 2rem; }
+      .team-section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--rc-muted);
+        margin: 0 0 1.2rem;
+      }
+      /* Software | Research side by side; stacks on narrow screens */
+      .team-sections {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: clamp(1.5rem, 4vw, 3rem);
+        text-align: center;
+      }
+      /* One shared card width + min-height so software and research cards are
+         identical (min-height fits the tallest card: a three-line role block). */
+      .team-sections { --team-card-w: 220px; }
+      .team-sections .team-card { min-height: 20.6rem; }
+      /* Neutralize the global ".page-shell section + section" spacing, which
+         pushed the research section 2rem below software — the misalignment made
+         equal-sized cards read as different sizes. */
+      .team-sections .team-section { margin-top: 0; }
+      .team-section--software { flex: 0 0 auto; width: var(--team-card-w); }
+      .team-section--research {
+        flex: 1 1 0%;
+        min-width: 0;
+        border-left: 1px solid var(--rc-border);
+        padding-left: clamp(1.5rem, 4vw, 3rem);
+      }
+      .team-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, var(--team-card-w));
+        justify-content: center;
+        gap: 1rem;
+      }
+      @media (max-width: 991.98px) {
+        .team-sections { flex-direction: column; align-items: stretch; }
+        .team-section--software { width: auto; }
+        .team-sections .team-section--research { border-left: none; padding-left: 0; margin-top: 2rem; }
+      }
+      /* Initials stand-in until a real photo is added (same footprint as .team-avatar) */
+      .team-avatar--placeholder {
+        width: clamp(118px, 24vw, 158px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--rc-surface-2);
+        color: var(--rc-muted);
+        font-size: 2.1rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        border: 3px solid var(--rc-surface-3);
+        box-shadow: var(--rc-shadow-sm);
+        margin-bottom: 0.35rem;
+      }
+    </style>
+</head>
+{% set nav_active = 'team' %}
+<body class="text-bg-dark page-shell">
+    <div class="cover-container d-flex w-100 min-vh-100 p-3 mx-auto flex-column">
+        <header class="mb-auto">
+            {% include '_partials/navbar.html' %}
+        </header>
+
+        <main class="team-main text-center team-content">
+            <h1 class="team-title">Meet the team</h1>
+            <p class="team-lede">{{ brand_name }} is backed by a team of researchers.</p>
+            <div class="team-sections">
+                <section class="team-section team-section--software">
+                    <h2 class="team-section-title">Software</h2>
+                    <div class="team-cards">
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/jamie.jpg') }}?v={{ static_version }}" alt="Jamie Cummins" class="team-avatar">
+                            <h5>Jamie Cummins</h5>
+                            <p><span class="team-role">Creator &amp; Developer</span><br>University of Bern</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="team-section team-section--research">
+                    <h2 class="team-section-title">Research</h2>
+                    <div class="team-cards">
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/bence.jpg') }}?v={{ static_version }}" alt="Bence Palfi" class="team-avatar">
+                            <h5>Bence Palfi</h5>
+                            <p><span class="team-role">Research Team Lead</span><br>Lecturer<br>Goldsmiths University</p>
+                        </div>
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/balazs.jpeg') }}?v={{ static_version }}" alt="Balazs Aczel" class="team-avatar">
+                            <h5>Balazs Aczel</h5>
+                            <p><span class="team-role">Professor</span><br>ELTE University</p>
+                        </div>
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/zoltan.jpg') }}?v={{ static_version }}" alt="Zoltan Kekecs" class="team-avatar">
+                            <h5>Zoltan Kekecs</h5>
+                            <p><span class="team-role">Assistant Professor</span><br>ELTE University</p>
+                        </div>
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/dominik.jpg') }}?v={{ static_version }}" alt="Dominik Dianovics" class="team-avatar">
+                            <h5>Dominik Dianovics</h5>
+                            <p><span class="team-role">PhD Researcher</span><br>ELTE University</p>
+                        </div>
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/jamie.jpg') }}?v={{ static_version }}" alt="Jamie Cummins" class="team-avatar">
+                            <h5>Jamie Cummins</h5>
+                            <p><span class="team-role">Advanced Postdoctoral Researcher</span><br>University of Bern</p>
+                        </div>
+                        <div class="team-card">
+                            <img src="{{ url_for('static', path='assets/malte.png') }}?v={{ static_version }}" alt="Malte Elson" class="team-avatar">
+                            <h5>Malte Elson</h5>
+                            <p><span class="team-role">Professor</span><br>University of Bern</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        {% include '_partials/footer.html' %}
+    </div>
+    <script src="{{ url_for('static', path='js/bootstrap.bundle.min.js') }}?v={{ static_version }}"></script>
+</body>
+</html>

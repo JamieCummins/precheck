@@ -1,0 +1,13 @@
+*.log
+__pycache__/
+*.pyc
+.git/
+node_modules/
+tests/
+.env
+
+# Don’t ship local envs to dynos
+venv/
+.venv/
+
+docs/

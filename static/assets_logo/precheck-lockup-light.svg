@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="48" viewBox="0 0 220 48">
+  <g transform="scale(0.75)">
+  <line x1="16" y1="8" x2="16" y2="56" stroke="#1c2233" stroke-width="3" stroke-linecap="round"></line>
+  <rect x="22" y="12" width="30" height="7" rx="3.5" fill="#f05a5a"></rect>
+  <rect x="22" y="24" width="22" height="7" rx="3.5" fill="#f09c3c"></rect>
+  <rect x="22" y="36" width="26" height="7" rx="3.5" fill="#4fc4b4"></rect>
+  <rect x="22" y="48" width="16" height="7" rx="3.5" fill="#c3c9d8"></rect></g>
+  <text x="58" y="32" font-family="&#39;IBM Plex Sans&#39;,&#39;Helvetica Neue&#39;,Arial,sans-serif" font-size="26" font-weight="700" fill="#1c2233">Pre<tspan font-weight="400">Check</tspan></text>
+</svg>
