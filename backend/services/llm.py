@@ -32,6 +32,10 @@ DEFAULT_DEEPSEEK_MODEL = "deepseek-reasoner"
 DEFAULT_CLAUDE_MODEL = "claude-opus-4-8"
 # Open-weight Qwen, served via Groq's OpenAI-compatible endpoint (uses GROQ_API_KEY).
 DEFAULT_QWEN_MODEL = "qwen/qwen3.6-27b"
+# Kimi K3 (Moonshot AI), served via OpenRouter's OpenAI-compatible endpoint
+# (uses OPENROUTER_API_KEY; override the model with OPENROUTER_MODEL).
+DEFAULT_OPENROUTER_MODEL = "moonshotai/kimi-k3"
+DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 # Uni Bern GPUStack — OpenAI-compatible, but reachable only from inside the Bern
 # network. So the gpustack provider only works from a machine on that network
 # (e.g. the CLI run locally, or an in-network worker), not the Heroku worker.
@@ -46,7 +50,7 @@ _OPENAI_CLIENTS = {"openai"}
 # gpustack is intentionally excluded: it is reachable only from inside the Uni Bern
 # network, so it is offered on the local CLI only. The CLI accepts ALL_CLIENTS.
 HOSTED_CLIENTS = frozenset({"openai", "deepseek", "qwen", "claude"})
-ALL_CLIENTS = HOSTED_CLIENTS | {"gpustack"}
+ALL_CLIENTS = HOSTED_CLIENTS | {"gpustack", "openrouter"}
 
 
 def _env_str(name: str, default: str | None = None) -> str:
@@ -123,6 +127,10 @@ def _qwen_model() -> str:
     return _env_str("QWEN_MODEL", DEFAULT_QWEN_MODEL)
 
 
+def _openrouter_model() -> str:
+    return _env_str("OPENROUTER_MODEL", DEFAULT_OPENROUTER_MODEL)
+
+
 def _gpustack_model() -> str:
     return _env_str("GPUSTACK_MODEL", DEFAULT_GPUSTACK_MODEL)
 
@@ -141,6 +149,8 @@ def resolve_judge_model(client_choice: str) -> str:
         return _qwen_model()
     if choice == "gpustack":
         return _gpustack_model()
+    if choice == "openrouter":
+        return _openrouter_model()
     if choice == "claude":
         return _claude_model()
     return _openai_model()
@@ -376,6 +386,60 @@ def _qwen_chat(
     return _strip_deepseek_reasoning(raw)
 
 
+def _openrouter_chat(
+    messages: list[dict[str, str]],
+    *,
+    model: str | None = None,
+    use_json_mode: bool = False,
+    reasoning_effort: str | None = None,
+) -> str:
+    """Kimi K3 (or any OPENROUTER_MODEL) via OpenRouter's OpenAI-compatible endpoint.
+
+    Mirrors the Qwen/Groq path: JSON-object structured output for the judgement
+    call, ``reasoning_effort`` forwarded in the OpenAI-compatible form (OpenRouter
+    translates it per model), and any optional knob the endpoint or model rejects
+    is dropped and the call retried rather than failing the dimension. Stray
+    reasoning channels are stripped the same way as DeepSeek/Qwen output."""
+    client = get_openrouter_client()
+    kwargs: dict[str, Any] = {
+        "model": model or _openrouter_model(),
+        "messages": messages,
+        "temperature": 0,
+    }
+    effort = _normalize_reasoning_effort_value(
+        reasoning_effort or os.environ.get("OPENROUTER_REASONING_EFFORT")
+    )
+    if effort:
+        kwargs["reasoning_effort"] = effort
+    if use_json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+    while True:
+        try:
+            response = client.chat.completions.create(**kwargs)
+            break
+        except Exception as exc:
+            if _is_provider_auth_error(exc):
+                _raise_provider_auth_error("OpenRouter", "OPENROUTER_API_KEY", exc)
+            lowered = str(exc).lower()
+            dropped = None
+            if ("response_format" in lowered or "json" in lowered) and "response_format" in kwargs:
+                kwargs.pop("response_format"); dropped = "response_format"
+            elif "reasoning" in lowered and "reasoning_effort" in kwargs:
+                kwargs.pop("reasoning_effort"); dropped = "reasoning_effort"
+            elif "temperature" in lowered and "temperature" in kwargs:
+                kwargs.pop("temperature"); dropped = "temperature"
+            if dropped is None:
+                raise
+            logger.info("OpenRouter call rejected %s; retrying without it", dropped, exc_info=exc)
+    from . import cost_tracking
+
+    cost_tracking.record_llm_usage(kwargs["model"], getattr(response, "usage", None))
+    message = response.choices[0].message
+    cost_tracking.stash_reasoning(getattr(message, "reasoning_content", None) or getattr(message, "reasoning", None))
+    raw = _message_content_to_text(message)
+    return _strip_deepseek_reasoning(raw)
+
+
 def _gpustack_chat(
     messages: list[dict[str, str]], *, model: str | None = None, use_json_mode: bool = False
 ) -> str:
@@ -466,6 +530,16 @@ def get_openai_client() -> OpenAI:
 
 
 @lru_cache(maxsize=1)
+def get_openrouter_client() -> OpenAI:
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "Missing OPENROUTER_API_KEY. Please contact administrators."
+        )
+    return OpenAI(api_key=api_key, base_url=DEFAULT_OPENROUTER_BASE_URL)
+
+
+@lru_cache(maxsize=1)
 def get_deepseek_client() -> OpenAI:
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
@@ -545,16 +619,28 @@ def _claude_response_text(response: Any) -> str:
     return "".join(parts).strip()
 
 
+def _claude_effort_body(reasoning_effort: str | None) -> dict[str, Any] | None:
+    """Map a low/medium/high reasoning effort onto Claude's `output_config.effort`
+    (GA on Opus 4.6+ / Opus 5; controls adaptive-thinking depth). Sent via
+    `extra_body` because the pinned anthropic SDK (0.34.x) predates the param."""
+    effort = _normalize_reasoning_effort_value(reasoning_effort)
+    if not effort:
+        return None
+    return {"output_config": {"effort": effort}}
+
+
 def _claude_chat(
     *,
     model: str,
     messages: list[dict[str, str]],
     max_tokens: int | None = None,
+    reasoning_effort: str | None = None,
 ) -> str:
     """Call Claude (Anthropic Messages API) and return the concatenated text.
 
-    Mirrors the synchronous client pattern used for DeepSeek. Reasoning
-    effort is OpenAI-family-specific and intentionally not forwarded here."""
+    Mirrors the synchronous client pattern used for DeepSeek. ``reasoning_effort``
+    maps onto `output_config.effort` (see _claude_effort_body); models that reject
+    it get one retry without it."""
     client = get_claude_client()
     system, convo = _split_system_for_anthropic(messages)
     # NB: no `temperature` — Opus 4.8 (the default) rejects it as deprecated, and
@@ -566,12 +652,21 @@ def _claude_chat(
     }
     if system:
         kwargs["system"] = system
-    try:
-        response = client.messages.create(**kwargs)
-    except Exception as exc:
-        if _is_provider_auth_error(exc):
-            _raise_provider_auth_error("Claude", "CLAUDE_API_KEY", exc)
-        raise
+    effort_body = _claude_effort_body(reasoning_effort)
+    if effort_body:
+        kwargs["extra_body"] = effort_body
+    while True:
+        try:
+            response = client.messages.create(**kwargs)
+            break
+        except Exception as exc:
+            if _is_provider_auth_error(exc):
+                _raise_provider_auth_error("Claude", "CLAUDE_API_KEY", exc)
+            if "output_config" in str(exc).lower() and "extra_body" in kwargs:
+                kwargs.pop("extra_body")
+                logger.info("Claude rejected output_config effort; retrying without it", exc_info=exc)
+                continue
+            raise
     return _claude_response_text(response)
 
 
@@ -581,6 +676,7 @@ def _claude_structured(
     model: str,
     tool: dict[str, Any],
     max_tokens: int | None = None,
+    reasoning_effort: str | None = None,
 ) -> str:
     """Call Claude with a FORCED tool call and return the tool input as a JSON string.
 
@@ -602,12 +698,21 @@ def _claude_structured(
     }
     if system:
         kwargs["system"] = system
-    try:
-        response = client.messages.create(**kwargs)
-    except Exception as exc:
-        if _is_provider_auth_error(exc):
-            _raise_provider_auth_error("Claude", "CLAUDE_API_KEY", exc)
-        raise
+    effort_body = _claude_effort_body(reasoning_effort)
+    if effort_body:
+        kwargs["extra_body"] = effort_body
+    while True:
+        try:
+            response = client.messages.create(**kwargs)
+            break
+        except Exception as exc:
+            if _is_provider_auth_error(exc):
+                _raise_provider_auth_error("Claude", "CLAUDE_API_KEY", exc)
+            if "output_config" in str(exc).lower() and "extra_body" in kwargs:
+                kwargs.pop("extra_body")
+                logger.info("Claude rejected output_config effort; retrying without it", exc_info=exc)
+                continue
+            raise
     from . import cost_tracking
 
     cost_tracking.record_llm_usage(model, getattr(response, "usage", None))

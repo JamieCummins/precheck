@@ -613,7 +613,7 @@ def build_parser() -> argparse.ArgumentParser:
     general.add_argument(
         "--client",
         default="openai",
-        choices=["openai", "deepseek", "qwen", "claude", "gpustack"],
+        choices=["openai", "deepseek", "qwen", "claude", "gpustack", "openrouter"],
         help="LLM provider to use ('gpustack' = Uni Bern GPUStack; requires the Bern network).",
     )
     general.add_argument(
@@ -724,7 +724,7 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument(
         "--client",
         default="openai",
-        choices=["openai", "deepseek", "qwen", "claude", "gpustack"],
+        choices=["openai", "deepseek", "qwen", "claude", "gpustack", "openrouter"],
         help="LLM provider for every row.",
     )
     batch.add_argument("--embedding-model", help="Embeddings model for retrieval (default: text-embedding-3-large).")
@@ -786,7 +786,7 @@ def build_parser() -> argparse.ArgumentParser:
     quality.add_argument(
         "--client",
         default="openai",
-        choices=["openai", "deepseek", "qwen", "claude", "gpustack"],
+        choices=["openai", "deepseek", "qwen", "claude", "gpustack", "openrouter"],
         help="LLM provider to use ('gpustack' = Uni Bern GPUStack; requires the Bern network).",
     )
     quality.add_argument(
@@ -854,7 +854,7 @@ def build_parser() -> argparse.ArgumentParser:
     clinical.add_argument(
         "--client",
         default="openai",
-        choices=["openai", "deepseek", "qwen", "claude", "gpustack"],
+        choices=["openai", "deepseek", "qwen", "claude", "gpustack", "openrouter"],
         help="LLM provider to use ('gpustack' = Uni Bern GPUStack; requires the Bern network).",
     )
     clinical.add_argument(
@@ -923,7 +923,7 @@ def build_parser() -> argparse.ArgumentParser:
     animals.add_argument(
         "--client",
         default="openai",
-        choices=["openai", "deepseek", "qwen", "claude", "gpustack"],
+        choices=["openai", "deepseek", "qwen", "claude", "gpustack", "openrouter"],
         help="LLM provider to use ('gpustack' = Uni Bern GPUStack; requires the Bern network).",
     )
     animals.add_argument(

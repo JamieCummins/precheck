@@ -70,6 +70,8 @@ from .llm import (
     _openai_model,
     _gpustack_chat,
     _gpustack_model,
+    _openrouter_chat,
+    _openrouter_model,
     _qwen_chat,
     _qwen_model,
     _raise_provider_auth_error,
@@ -2162,10 +2164,17 @@ def _dispatch_judgement(
         return _qwen_chat(messages, use_json_mode=True)
     if client_choice == "gpustack":
         return _gpustack_chat(messages, use_json_mode=True)
+    if client_choice == "openrouter":
+        return _openrouter_chat(messages, use_json_mode=True, reasoning_effort=reasoning_effort)
     if client_choice == "claude":
         # Forced tool call => schema-constrained JSON (Claude has no response_format),
         # which removes the sporadic unescaped-quote parse failures.
-        return _claude_structured(messages, model=_claude_model(), tool=claude_tool or _COMPARISON_TOOL)
+        return _claude_structured(
+            messages,
+            model=_claude_model(),
+            tool=claude_tool or _COMPARISON_TOOL,
+            reasoning_effort=reasoning_effort,
+        )
     raise ValueError("Invalid client selection")
 
 
